@@ -73,7 +73,7 @@ jobs:
       - name: Tag Docker image for ECR
         run: |
           IMAGE_TAG=$(date +%Y%m%d%H%M%S)
-          docker tag my-backend-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:$IMAGE_TAG
+          docker tag my-backend-app:${IMAGE_TAG} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:$IMAGE_TAG
 
       # Step 6: Push Docker image to ECR
       - name: Push Docker image to ECR
