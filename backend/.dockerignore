@@ -1,0 +1,19 @@
+# Ignore node_modules (already installed in the container)
+node_modules
+npm-debug.log
+
+# Ignore logs and temporary files
+logs
+*.log
+*.tmp
+
+# Ignore git and other version control directories
+.git
+.gitignore
+
+# Ignore Docker-related files (if not needed in the build)
+Dockerfile
+.dockerignore
+
+# Ignore local environment files (security-related)
+.env
