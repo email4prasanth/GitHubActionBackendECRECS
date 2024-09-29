@@ -6,6 +6,7 @@ on:
       - prasanth
     paths:
       - 'backend/**'
+      
   pull_request:
     branches:
       - prasanth
