@@ -6,7 +6,7 @@ on:
       - prasanth
     paths:
       - 'backend/**'
-      
+
   pull_request:
     branches:
       - prasanth
@@ -67,7 +67,7 @@ jobs:
       - name: Build Docker image
         run: |
           IMAGE_TAG=$(date +%Y%m%d%H%M%S)
-          docker build -t my-backend-app:${IMAGE_TAG} -f backend/Dockerfile ./backend
+          docker build -t my-backend-app:${IMAGE_TAG} -f ./backend/Dockerfile .
 
       # Step 5: Tag Docker image for ECR
       - name: Tag Docker image for ECR
