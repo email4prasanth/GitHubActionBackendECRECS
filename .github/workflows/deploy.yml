@@ -81,21 +81,32 @@ jobs:
       #     IMAGE_TAG=$(date +%Y%m%d%H%M%S)
       #     docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:$IMAGE_TAG
       # Step 5: Generate a timestamp for tagging the Docker image (used across steps)
+            # Step 5: Check if the ECR repository exists, and create it if it doesn't
+      - name: Create ECR repository if it doesn't exist
+        run: |
+          if ! aws ecr describe-repositories --repository-names my-backend-app --region ${{ secrets.AWS_REGION }} > /dev/null 2>&1; then
+            echo "ECR repository does not exist. Creating it..."
+            aws ecr create-repository --repository-name my-backend-app --region ${{ secrets.AWS_REGION }}
+          else
+            echo "ECR repository already exists. Skipping creation."
+          fi
+
+      # Step 6: Generate a timestamp for tagging the Docker image
       - name: Generate image tag
         id: image_tag
         run: echo "::set-output name=tag::$(date +'%Y%m%d%H%M%S')"
 
-      # Step 6: Build and tag the Docker image using the Dockerfile
+      # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
         run: |
           docker build -t my-backend-app:${{ steps.image_tag.outputs.tag }} -f ./backend/Dockerfile .
 
-      # Step 7: Tag Docker image for ECR
+      # Step 8: Tag Docker image for ECR
       - name: Tag Docker image for ECR
         run: |
           docker tag my-backend-app:${{ steps.image_tag.outputs.tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
 
-      # Step 8: Push Docker image to ECR
+      # Step 9: Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
