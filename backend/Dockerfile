@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Step 4: Install dependencies
-RUN npm install 
+RUN npm install moment nodemon
 
 # Step 5: Copy the rest of your application code to the container
 COPY . .
@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 3000
 
 # Step 7: Command to run the app (make sure the start script is in your package.json)
-CMD [ "node", "index.js" ]
+CMD [ "node", "backend/index.js" ]
