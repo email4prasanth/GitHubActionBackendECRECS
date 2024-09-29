@@ -63,20 +63,39 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Step 4: Build and tag the Docker image using the Dockerfile
+      # # Step 4: Build and tag the Docker image using the Dockerfile
+      # - name: Build Docker image
+      #   run: |
+      #     IMAGE_TAG=$(date +%Y%m%d%H%M%S)
+      #     docker build -t my-backend-app:${IMAGE_TAG} -f ./backend/Dockerfile .
+
+      # # Step 5: Tag Docker image for ECR
+      # - name: Tag Docker image for ECR
+      #   run: |
+      #     IMAGE_TAG=$(date +%Y%m%d%H%M%S)
+      #     docker tag my-backend-app:${IMAGE_TAG} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:$IMAGE_TAG
+
+      # # Step 6: Push Docker image to ECR
+      # - name: Push Docker image to ECR
+      #   run: |
+      #     IMAGE_TAG=$(date +%Y%m%d%H%M%S)
+      #     docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:$IMAGE_TAG
+      # Step 5: Generate a timestamp for tagging the Docker image (used across steps)
+      - name: Generate image tag
+        id: image_tag
+        run: echo "::set-output name=tag::$(date +'%Y%m%d%H%M%S')"
+
+      # Step 6: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
         run: |
-          IMAGE_TAG=$(date +%Y%m%d%H%M%S)
-          docker build -t my-backend-app:${IMAGE_TAG} -f ./backend/Dockerfile .
+          docker build -t my-backend-app:${{ steps.image_tag.outputs.tag }} -f ./backend/Dockerfile .
 
-      # Step 5: Tag Docker image for ECR
+      # Step 7: Tag Docker image for ECR
       - name: Tag Docker image for ECR
         run: |
-          IMAGE_TAG=$(date +%Y%m%d%H%M%S)
-          docker tag my-backend-app:${IMAGE_TAG} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:$IMAGE_TAG
+          docker tag my-backend-app:${{ steps.image_tag.outputs.tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
 
-      # Step 6: Push Docker image to ECR
+      # Step 8: Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
-          IMAGE_TAG=$(date +%Y%m%d%H%M%S)
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:$IMAGE_TAG
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
