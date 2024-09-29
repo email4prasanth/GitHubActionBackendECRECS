@@ -27,8 +27,9 @@ jobs:
 
       # Step 3: Install dependencies
       - name: Install dependencies
-        run: npm install
-
+        run: |
+        npm install moment nodemon
+        
       # Step 4: Run tests (Modify this according to your testing framework)
       - name: Run tests
         run: node index.js
