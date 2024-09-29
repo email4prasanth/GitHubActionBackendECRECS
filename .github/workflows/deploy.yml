@@ -32,4 +32,4 @@ jobs:
 
       # Step 4: Run tests (Modify this according to your testing framework)
       - name: Run tests
-        run: node index.js
+        run: node backend/index.js
