@@ -4,7 +4,7 @@ FROM node:16-alpine
 # Step 2: Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# Step 3: Copy the package.json and package-lock.json (check if is exist)
+# Step 3: Copy the package.json and package-lock.json (check if exist)
 COPY package*.json ./
 
 # Step 4: Install dependencies
