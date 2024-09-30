@@ -106,7 +106,10 @@ jobs:
       - name: Generate image tag
         id: image_tag
         run: |
-          echo "tag=$(date +'%Y%m%d%H%M%S')" > image-tag.txt
+          tag=$(date +'%Y%m%d%H%M%S')
+          echo "tag=$tag" >> $GITHUB_ENV
+          echo $tag > image-tag.txt
+          
       # Upload image-tag.txt as an artifact
       - name: Upload tag artifact
         uses: actions/upload-artifact@v3
