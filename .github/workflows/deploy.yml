@@ -254,6 +254,7 @@ jobs:
       - name: Generate image tag
         id: image_tag
         run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+             echo "$GITHUB_ENV"
 
       # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
@@ -287,12 +288,18 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+      # Step : Display the image tag
+      - name: Display the image tag
+        run: |
+          echo "Current image tag is: ${{ env.tag }}"
+          echo "Current image tag is: $GITHUB_ENV"
 
       # Step 3: Update ECS service with new image
       - name: Deploy to ECS
         run: |
           ECS_CLUSTER=ecs-cluster
           ECS_SERVICE=ecs-service
+          echo "GITHUB_ENV=$GITHUB_ENV"
           echo "${{ env.tag }}"
           IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
           echo "Update image is $IMAGE_URI"
