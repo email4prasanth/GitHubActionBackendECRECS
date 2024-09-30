@@ -285,7 +285,7 @@ jobs:
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
     needs: build-and-push
-    runs-on: [ubuntu-latest, steps.image_tag.outputs.tag]
+    runs-on: [ubuntu-latest, "${{ steps.image_tag.outputs.tag }}"]
 
     steps:
       # env variable
