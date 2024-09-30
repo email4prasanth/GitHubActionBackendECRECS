@@ -279,16 +279,13 @@ jobs:
       - name: Push Docker image to ECR
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag  }}
-  publish:
-    needs: [build-and-push]
-    runs-on: ubuntu-latest
-    env:
-      tag:needs.build-and-push.outputs.tag
 
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
     needs: build-and-push
     runs-on: ubuntu-latest
+    env:
+      tag:${{ needs.build-and-push.outputs.tag }}
 
     steps:
       # Step 1: Checkout the repository
@@ -314,7 +311,7 @@ jobs:
           ECS_CLUSTER=ecs-cluster
           ECS_SERVICE=ecs-service
           echo "GITHUB_ENV=$GITHUB_ENV"
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ needs.build-and-push.outputs.tag }}
+          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
           echo "Update image is $IMAGE_URI"
       # Step 4: Get the existing task definition
       - name: Get the existing task definition
