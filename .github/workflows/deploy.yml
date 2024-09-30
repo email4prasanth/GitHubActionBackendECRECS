@@ -233,7 +233,7 @@ jobs:
               memory: 3072,
               memoryReservation: 1024,
               essential: true,
-              portMappings: [{
+              portMappings: [{  
                 containerPort: 3000,
                 hostPort: 3000,
                 protocol: "tcp"
@@ -252,10 +252,9 @@ jobs:
         run: |
           # Debug the new task definition JSON
           echo "New Task Definition JSON: $NEW_TASK_DEF"
-
-          # Validate the JSON with jq to ensure it's correct
           echo "$NEW_TASK_DEF" | jq empty
-          
+      - name: Register the new task definition
+        run: |
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
             --cli-input-json "$NEW_TASK_DEF" \
             --query "taskDefinition.taskDefinitionArn" --output text)
