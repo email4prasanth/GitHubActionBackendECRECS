@@ -255,10 +255,12 @@ jobs:
         id: image_tag
         run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
       
-      # Step 7: Set the tag as an output to pass to the next job
+      # Step 7: Set the tag as an output using environment files
       - name: Set output for tag
-        run: echo "::set-output name=tag::$(date +'%Y%m%d%H%M%S')"
-        id: set_tag
+        run: |
+          tag=$(date +'%Y%m%d%H%M%S')
+          echo "tag=$tag" >> $GITHUB_ENV
+          echo "tag=$tag" >> $GITHUB_OUTPUT
 
       # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
