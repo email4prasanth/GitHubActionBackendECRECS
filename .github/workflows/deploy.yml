@@ -147,16 +147,6 @@ jobs:
   deploy-to-ecs:
     needs: build-and-push
     runs-on: ubuntu-latest
-    # env: 
-    #   tag: ${{ needs.build-and-push.outputs.tag-number}}
-    # steps:
-    #   # env variable
-    #   - name: Native Job
-    #     id: deploy-to-ecs
-    #     run: |
-    #       echo "$tag"
-    #       echo "I'm running on ${{needs.build-and-push.outputs.tag-number}}"
-    #       cat ${{needs.build-and-push.outputs.tag-number}}
     steps:
       # Download the image-tag.txt file from the artifact
       - name: Download tag artifact
@@ -164,12 +154,12 @@ jobs:
         with:
           name: image-tag
 
-      # Read the tag from the downloaded text file
-      - name: Read tag from file
+      # Read the tag from the downloaded text file and set it in the GitHub environment
+      - name: Read tag from file and export as environment variable
         run: |
           tag=$(cat image-tag.txt)
           echo "The tag is: $tag"
-          
+          echo "tag=$tag" >> $GITHUB_ENV         
 
       # Step 1: Checkout the repository
       - name: Checkout code
@@ -189,41 +179,41 @@ jobs:
           ECS_CLUSTER=ecs-cluster
           ECS_SERVICE=ecs-service
           echo "GITHUB_ENV=$GITHUB_ENV"
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${tag}
+          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
           echo "Update image is $IMAGE_URI"
-      # Step 4: Get the existing task definition
-      - name: Get the existing task definition
-        run: |
-          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ecr-task-def:2 --query "taskDefinition" --output json)
-      # Step 5: Update the image in the task definition and ensure proper memory allocation
-      - name: Update the image in the task definition and memory allocation
-        run: |
-          NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '
-          .containerDefinitions[0].image=$IMAGE_URI | 
-          { 
-            family: .family, 
-            executionRoleArn: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ECSTaskExecutionRole",  # Update with your ARN
-            containerDefinitions: [{
-              name: .containerDefinitions[0].name,
-              image: $IMAGE_URI,
-              cpu: .containerDefinitions[0].cpu,
-              memory: 3072,  # Keep the container memory as required
-              memoryReservation: 1024,  # Optional: Set a memory reservation
-              essential: true,
-              portMappings: [{            # Include port mappings
-                containerPort: 3000,
-                hostPort: 3000,
-                protocol: "tcp"
-              }]
-            }],
-            requiresCompatibilities: ["FARGATE"], 
-            networkMode: "awsvpc", 
-            cpu: "1024", 
-            memory: "4096"  # Set task memory to at least 4096
-          }')
+      # # Step 4: Get the existing task definition
+      # - name: Get the existing task definition
+      #   run: |
+      #     TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ecr-task-def:2 --query "taskDefinition" --output json)
+      # # Step 5: Update the image in the task definition and ensure proper memory allocation
+      # - name: Update the image in the task definition and memory allocation
+      #   run: |
+      #     NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '
+      #     .containerDefinitions[0].image=$IMAGE_URI | 
+      #     { 
+      #       family: .family, 
+      #       executionRoleArn: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ECSTaskExecutionRole",  # Update with your ARN
+      #       containerDefinitions: [{
+      #         name: .containerDefinitions[0].name,
+      #         image: $IMAGE_URI,
+      #         cpu: .containerDefinitions[0].cpu,
+      #         memory: 3072,  # Keep the container memory as required
+      #         memoryReservation: 1024,  # Optional: Set a memory reservation
+      #         essential: true,
+      #         portMappings: [{            # Include port mappings
+      #           containerPort: 3000,
+      #           hostPort: 3000,
+      #           protocol: "tcp"
+      #         }]
+      #       }],
+      #       requiresCompatibilities: ["FARGATE"], 
+      #       networkMode: "awsvpc", 
+      #       cpu: "1024", 
+      #       memory: "4096"  # Set task memory to at least 4096
+      #     }')
 
-          # Register the new task definition
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
+      #     # Register the new task definition
+      #     NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
 
-          # Update ECS service with the new task definition
-          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
+      #     # Update ECS service with the new task definition
+      #     aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
