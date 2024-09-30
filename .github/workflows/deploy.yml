@@ -285,7 +285,7 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     env:
-      tag:${{ needs.build-and-push.outputs.tag }}
+      tag: ${{ needs.build-and-push.outputs.tag }}
 
     steps:
       # Step 1: Checkout the repository
