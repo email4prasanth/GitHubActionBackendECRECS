@@ -299,6 +299,7 @@ jobs:
       - name: Display the image tag
         run: |
           echo "Current image tag is: ${{ needs.build-and-push.outputs.tag }}"
+          echo "Current image tag is: ${{ env.tag }}"
 
       # Step 3: Update ECS service with new image
       - name: Deploy to ECS
@@ -306,7 +307,6 @@ jobs:
           ECS_CLUSTER=ecs-cluster
           ECS_SERVICE=ecs-service
           echo "GITHUB_ENV=$GITHUB_ENV"
-          echo "${{ needs.build-and-push.outputs.tag }}"
           IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ needs.build-and-push.outputs.tag }}
           echo "Update image is $IMAGE_URI"
       # Step 4: Get the existing task definition
