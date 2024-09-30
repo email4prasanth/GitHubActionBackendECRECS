@@ -1,4 +1,5 @@
 
+
 name: Backend Check
 
 on:
@@ -65,6 +66,8 @@ jobs:
   # Job 2: Build Docker Image and Push to ECR
   build-and-push:
     needs: build-and-test  # Only runs if tests pass
+    # outputs:
+    #   tag: ${{steps.build-and-push.outputs.tag }}
     runs-on: ubuntu-latest
 
     steps:
@@ -99,51 +102,130 @@ jobs:
             echo "ECR repository already exists. Skipping creation."
           fi
 
-      # Step 6: Increment and retrieve the build ID
-      - name: Get current build ID
-        id: build_id
+      # Step 6: Generate a timestamp for tagging the Docker image
+      - name: Generate image tag
+        id: image_tag
         run: |
-          if [ ! -f build-id.txt ]; then echo "0" > build-id.txt; fi
-          build_id=$(cat build-id.txt)
-          echo "Current Build ID: $build_id"
-          new_build_id=$((build_id+1))
-          echo $new_build_id > build-id.txt
-          echo "build_id=$new_build_id" >> $GITHUB_ENV
+          echo "tag=$(date +'%Y%m%d%H%M%S')" > image-tag.txt
+      # Upload image-tag.txt as an artifact
+      - name: Upload tag artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: image-tag
+          path: image-tag.txt
 
-      # Step 7: Commit the new build ID back to the repository
-      - name: Commit updated build ID
-        run: |
-          git config --global user.name 'email4prasanth'
-          git config --global user.email 'email4prasanth@gmail.com'
-          git add build-id.txt
-          git commit -m "Increment build ID to ${{ env.build_id }}"
-          git push
+      
+      # # Step 7: Set the tag as an output using environment files
+      # - name: Set output for tag
+      #   run: |
+      #     tag=$(date +'%Y%m%d%H%M%S')
+      #     echo "tag=$tag" >> $GITHUB_ENV
+      #     echo "tag=$tag" >> $GITHUB_OUTPUT
 
-      # Step 8: Build and tag the Docker image using the build ID
+      # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
         run: |
-          echo "Building Docker image with tag: ${{ env.build_id }}"
-          docker build -t my-backend-app:${{ env.build_id }} -f ./backend/Dockerfile .
+          echo "Building Docker image with tag: ${{ env.tag }}"
+          docker build -t my-backend-app:${{ env.tag }} -f ./backend/Dockerfile .
 
-      # Step 9: Tag Docker image for ECR
+      # Step 8: Tag Docker image for ECR
       - name: Tag Docker image for ECR
         run: |
-          docker tag my-backend-app:${{ env.build_id }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.build_id }}
+          docker tag my-backend-app:${{ env.tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag  }}
 
-      # Step 10: Push Docker image to ECR
+      # Step 9: Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.build_id }}
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag  }}
     outputs:
-      build_id: ${{ env.build_id }}
+      tag-number: ${{ steps.image_tag.outputs.tag }}
 
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
     needs: build-and-push
     runs-on: ubuntu-latest
-    env: 
-      build_id: ${{ needs.build-and-push.outputs.build_id }}
+    # env: 
+    #   tag: ${{ needs.build-and-push.outputs.tag-number}}
+    # steps:
+    #   # env variable
+    #   - name: Native Job
+    #     id: deploy-to-ecs
+    #     run: |
+    #       echo "$tag"
+    #       echo "I'm running on ${{needs.build-and-push.outputs.tag-number}}"
+    #       cat ${{needs.build-and-push.outputs.tag-number}}
     steps:
-      - name: Deploy to ECS
+      # Download the image-tag.txt file from the artifact
+      - name: Download tag artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: image-tag
+
+      # Read the tag from the downloaded text file
+      - name: Read tag from file
         run: |
-          echo "Deploying version ${{ env.build_id }} to ECS"
+          tag=$(cat image-tag.txt)
+          echo "The tag is: $tag"
+          
+
+      # # Step 1: Checkout the repository
+      # - name: Checkout code
+      #   uses: actions/checkout@v3
+
+      # # Step 2: Configure AWS credentials
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v2
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ secrets.AWS_REGION }}
+      # # Step : Display the image tag
+      # - name: Display the image tag
+      #   run: |
+      #     echo "Current image tag is: ${{ needs.build-and-push.outputs.tag }}"
+      #     echo "Current image tag is: ${{ env.tag }}"
+
+      # # Step 3: Update ECS service with new image
+      # - name: Deploy to ECS
+      #   run: |
+      #     ECS_CLUSTER=ecs-cluster
+      #     ECS_SERVICE=ecs-service
+      #     echo "GITHUB_ENV=$GITHUB_ENV"
+      #     IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
+      #     echo "Update image is $IMAGE_URI"
+      # # Step 4: Get the existing task definition
+      # - name: Get the existing task definition
+      #   run: |
+      #     TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ecr-task-def:2 --query "taskDefinition" --output json)
+      # # Step 5: Update the image in the task definition and ensure proper memory allocation
+      # - name: Update the image in the task definition and memory allocation
+      #   run: |
+      #     NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '
+      #     .containerDefinitions[0].image=$IMAGE_URI | 
+      #     { 
+      #       family: .family, 
+      #       executionRoleArn: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ECSTaskExecutionRole",  # Update with your ARN
+      #       containerDefinitions: [{
+      #         name: .containerDefinitions[0].name,
+      #         image: $IMAGE_URI,
+      #         cpu: .containerDefinitions[0].cpu,
+      #         memory: 3072,  # Keep the container memory as required
+      #         memoryReservation: 1024,  # Optional: Set a memory reservation
+      #         essential: true,
+      #         portMappings: [{            # Include port mappings
+      #           containerPort: 3000,
+      #           hostPort: 3000,
+      #           protocol: "tcp"
+      #         }]
+      #       }],
+      #       requiresCompatibilities: ["FARGATE"], 
+      #       networkMode: "awsvpc", 
+      #       cpu: "1024", 
+      #       memory: "4096"  # Set task memory to at least 4096
+      #     }')
+
+      #     # Register the new task definition
+      #     NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
+
+      #     # Update ECS service with the new task definition
+      #     aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
