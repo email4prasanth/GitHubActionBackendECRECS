@@ -243,11 +243,19 @@ jobs:
             networkMode: "awsvpc",
             cpu: "1024",
             memory: "4096"
-          }' | jq -c)  # Compress to a single-line JSON object
+          }' )
+           
 
           echo "Registering new task definition..."
+      # Register the new task definition and capture the ARN
+      - name: Register the new task definition
+        run: |
+          # Debug the new task definition JSON
+          echo "New Task Definition JSON: $NEW_TASK_DEF"
 
-          # Register the new task definition and capture the ARN
+          # Validate the JSON with jq to ensure it's correct
+          echo "$NEW_TASK_DEF" | jq empty
+          
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
             --cli-input-json "$NEW_TASK_DEF" \
             --query "taskDefinition.taskDefinitionArn" --output text)
