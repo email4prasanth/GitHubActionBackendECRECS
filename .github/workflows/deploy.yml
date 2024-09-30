@@ -30,7 +30,7 @@ jobs:
       # Step 3: Install dependencies
       - name: Install dependencies
         run: |
-          npm install moment nodemon
+          npm install moment nodemon express
 
       # Step 4: Run tests (Modify this according to your testing framework)
       - name: Run tests
