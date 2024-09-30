@@ -285,13 +285,13 @@ jobs:
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
     needs: build-and-push
-    runs-on: [ubuntu-latest, "${{ steps.image_tag.outputs.tag }}"]
-
+    runs-on: ubuntu-latest
     steps:
       # env variable
       - name: Native Job
-        id: native_job
-        run: echo "I'm running on ${{steps.image_tag.outputs.tag }}
+        id: deploy-to-ecs
+        run: |
+          echo "I'm running on ${{steps.image_tag.outputs.tag }}
 
       # # Step 1: Checkout the repository
       # - name: Checkout code
