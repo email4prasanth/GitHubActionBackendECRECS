@@ -40,9 +40,31 @@ npm init (click enter for all)
 ### Stage-2
 #### Build Docker Image and Push to ECR
 - To push Image to ECR we need `AccountId, Region`, 
-- Create an IAM user `githubaction-ecr` that allows `AmazonEC2ContainerRegistryFullAccess` generate Accesskeyid and secret
+- Create an IAM user `githubaction-ecr` that allows `AmazonEC2ContainerRegistryFullAccess, AmazonECS_FullAccess` generate Accesskeyid and secret
 - Open **settings > security > Secrets and variable > Acitons > Secrets > New Repo secret** 
     1. AWS_ACCESS_KEY_ID
     2. AWS_SECRET_ACCESS_KEY
     3. AWS_ACCOUNT_ID - 180294218712
     4. AWS_REGION - us-east-1
+- Login to ECR if it exits skip else create `my-backend-app` 
+- Create `Dockerfile, .dockerignore` files and generate Time stamp to give the tag name.
+- Build Docker image and tag it and push it.
+> [!IMPORTANT]
+> - What is account id we have use and whether we need to use `env or secret`
+> - Naming convention of ECR repo
+> - Docker file image is okay or need to use docker multi stage build.
+> - Naming convention of tag.
+> - Check the dockerfile and paths
+### Stage-3
+#### Deploy the Docker Container in AWS ECS
+- Create ECS service, cluster, task definition.
+-  Create ECS role as `github-ecs-role` with  `AWS service > Elastic Container Service > Elastic Container Service Task`, Attach Permissions `AmazonECSTaskExecutionRolePolicy, ECRFullAccess` open trust relationship make sure that "Service": "ecs-tasks.amazonaws.com" in json format.
+- Create Task definition `my-task-definition > aws fargate > OS > github-ecs-role > container my-ecs-container > copy my-backend-app uri, port map -80 > use log collectionn (if required)`.
+- Generate a task-definiton.json use vscode under path `H:\2_GitHub_Actions\GitHubActions\Gitbud_BE_ECR_ECS`.
+```
+aws ecs describe-task-definition --task-definition my-task-definition --query taskDefinition > task-definition.json
+```
+
+- Create cluster and service cluster name `my-github-ecs-cluster` infra `AWS Fargate serverless` and create. 
+- Set env variable with ECS_SERVICE, ECS_CLUSTER, ECS_TASKDEFINITION
+
