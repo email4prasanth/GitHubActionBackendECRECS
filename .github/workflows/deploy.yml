@@ -256,13 +256,15 @@ jobs:
       - name: Generate image tag
         id: image_tag
         run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+      - name: tag name
+        run: echo "${{ steps.image_tag.outputs.tag }}"
       
-      # Step 7: Set the tag as an output using environment files
-      - name: Set output for tag
-        run: |
-          tag=$(date +'%Y%m%d%H%M%S')
-          echo "tag=$tag" >> $GITHUB_ENV
-          echo "tag=$tag" >> $GITHUB_OUTPUT
+      # # Step 7: Set the tag as an output using environment files
+      # - name: Set output for tag
+      #   run: |
+      #     tag=$(date +'%Y%m%d%H%M%S')
+      #     echo "tag=$tag" >> $GITHUB_ENV
+      #     echo "tag=$tag" >> $GITHUB_OUTPUT
 
       # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
@@ -285,6 +287,9 @@ jobs:
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
     needs: build-and-push
+    uses: .\.github\workflows\deploy.yml
+    secrets:
+      TAG_NUMBER: ${{ needs.build-and-push.outputs.tag}}
     runs-on: ubuntu-latest
     steps:
       # env variable
