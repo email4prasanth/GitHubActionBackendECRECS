@@ -294,7 +294,8 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       # Step : Display the image tag
       - name: Display the image tag
-        run: echo "Current image tag is: ${{ needs.build-and-push.outputs.tag }}"
+        run: |
+          echo "Current image tag is: ${{ needs.build-and-push.outputs.tag }}"
 
       # Step 3: Update ECS service with new image
       - name: Deploy to ECS
