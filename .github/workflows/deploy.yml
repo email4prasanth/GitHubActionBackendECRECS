@@ -294,15 +294,16 @@ jobs:
           ECS_CLUSTER=ecs-cluster
           ECS_SERVICE=ecs-service
           IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
-      
+
           # Get the existing task definition
           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ecr-task-def:2 --query "taskDefinition" --output json)
-      
+
           # Update the image in the task definition and ensure proper memory allocation
           NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '
           .containerDefinitions[0].image=$IMAGE_URI | 
           { 
             family: .family, 
+            executionRoleArn: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ECSTaskExecutionRole",  # Ensure this matches your actual role
             containerDefinitions: [{ 
               name: .containerDefinitions[0].name,
               image: $IMAGE_URI,
@@ -316,10 +317,9 @@ jobs:
             cpu: "1024", 
             memory: "4096"  # Set task memory to at least 4096
           }')
-      
+
           # Register the new task definition
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
-      
+
           # Update ECS service with the new task definition
           aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
-      
