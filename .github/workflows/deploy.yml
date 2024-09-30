@@ -287,7 +287,7 @@ jobs:
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
     needs: build-and-push
-    uses: .\.github\workflows\deploy.yml
+    uses: ./.github/workflows/deploy.yml
     secrets:
       TAG_NUMBER: ${{ needs.build-and-push.outputs.tag}}
     runs-on: ubuntu-latest
