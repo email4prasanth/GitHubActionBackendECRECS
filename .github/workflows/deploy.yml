@@ -210,7 +210,7 @@ jobs:
                   console.log('Server shut down gracefully.');
                   process.exit(0); // Exit the process
               });
-          }, 30000); // 30 seconds
+          }, 2000); // 2 seconds
           "
 
   # Job 2: Build Docker Image and Push to ECR
@@ -296,7 +296,7 @@ jobs:
           IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
 
           # Get the existing task definition
-          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-task-definition --query "taskDefinition" --output json)
+          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ecr-task-def:2 --query "taskDefinition" --output json)
           
           # Update the image in the task definition
           NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '.containerDefinitions[0].image=$IMAGE_URI | { family: .family, containerDefinitions: .containerDefinitions }')
