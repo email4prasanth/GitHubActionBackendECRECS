@@ -253,24 +253,22 @@ jobs:
       # Step 6: Generate a timestamp for tagging the Docker image
       - name: Generate image tag
         id: image_tag
-        run: echo "::set-output name=tag::$(date +'%Y%m%d%H%M%S')"
-        # id: image_tag
-        # run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+        run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
 
       # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
         run: |
-          docker build -t my-backend-app:${{ steps.image_tag.outputs.tag}} -f ./backend/Dockerfile .
+          docker build -t my-backend-app:${{ env.tag }} -f ./backend/Dockerfile .
 
       # Step 8: Tag Docker image for ECR
       - name: Tag Docker image for ECR
         run: |
-          docker tag my-backend-app:${{ steps.image_tag.outputs.tag}} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag}}
+          docker tag my-backend-app:${{ env.tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
 
       # Step 9: Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag}}
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
 
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
@@ -295,7 +293,8 @@ jobs:
         run: |
           ECS_CLUSTER=ecs-cluster
           ECS_SERVICE=ecs-service
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag}}
+          echo "${{ env.tag }}"
+          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
           echo "Update image is $IMAGE_URI"
       # Step 4: Get the existing task definition
       - name: Get the existing task definition
