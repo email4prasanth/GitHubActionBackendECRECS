@@ -1,16 +1,17 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:us-east-1:180294218712:task-definition/my-task-definition:1",
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:180294218712:task-definition/ecr-task-def:2",
     "containerDefinitions": [
         {
-            "name": "my-ecs-container",
-            "image": "180294218712.dkr.ecr.us-east-1.amazonaws.com/my-backend-app",
+            "name": "ecs-container1",
+            "image": "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}",
             "cpu": 0,
+            "memory": 3072,
             "portMappings": [
                 {
-                    "containerPort": 80,
-                    "hostPort": 80,
+                    "name": "ecs-container1-80-tcp",
+                    "containerPort": 3000,
+                    "hostPort": 3000,
                     "protocol": "tcp",
-                    "name": "my-ecs-container-80-tcp",
                     "appProtocol": "http"
                 }
             ],
@@ -23,7 +24,7 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/my-task-definition",
+                    "awslogs-group": "/ecs/ecr-task-def",
                     "mode": "non-blocking",
                     "awslogs-create-group": "true",
                     "max-buffer-size": "25m",
@@ -35,11 +36,10 @@
             "systemControls": []
         }
     ],
-    "family": "my-task-definition",
-    "taskRoleArn": "arn:aws:iam::180294218712:role/github-ecs-role",
-    "executionRoleArn": "arn:aws:iam::180294218712:role/github-ecs-role",
+    "family": "ecr-task-def",
+    "executionRoleArn": "arn:aws:iam::180294218712:role/ECSTaskExecutionRole",
     "networkMode": "awsvpc",
-    "revision": 1,
+    "revision": 2,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -59,9 +59,6 @@
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.28"
         },
         {
-            "name": "com.amazonaws.ecs.capability.task-iam-role"
-        },
-        {
             "name": "ecs.capability.execution-role-ecr-pull"
         },
         {
@@ -79,15 +76,16 @@
         "EC2",
         "FARGATE"
     ],
-    "runtimePlatform": {
-        "cpuArchitecture": "X86_64",
-        "operatingSystemFamily": "LINUX"
-    },
     "requiresCompatibilities": [
         "FARGATE"
     ],
     "cpu": "1024",
     "memory": "3072",
-    "registeredAt": "2024-09-30T07:33:55.991000+05:30",
-    "registeredBy": "arn:aws:iam::180294218712:root"
+    "runtimePlatform": {
+        "cpuArchitecture": "X86_64",
+        "operatingSystemFamily": "LINUX"
+    },
+    "registeredAt": "2024-09-30T16:00:58.508Z",
+    "registeredBy": "arn:aws:iam::180294218712:root",
+    "tags": []
 }

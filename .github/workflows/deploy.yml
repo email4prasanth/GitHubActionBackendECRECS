@@ -1,3 +1,155 @@
+# name: Backend Check
+
+# on:
+#   push:
+#     branches:
+#       - prasanth
+#     paths:
+#       - 'backend/**'
+
+#   pull_request:
+#     branches:
+#       - prasanth
+
+# jobs:
+#   # Job 1: Build and Test the backend code
+#   build-and-test:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       # Step 1: Checkout the repository code
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       # Step 2: Set up Node.js (assuming your backend is Node.js-based)
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: '16'
+
+#       # Step 3: Install dependencies
+#       - name: Install dependencies
+#         run: |
+#           npm install moment nodemon express
+
+#       # Step 4: Run tests (Modify this according to your testing framework)
+#       - name: Run tests
+#         run: | 
+#           # Start the server and set it to shut down after 30 seconds
+#           node -e "
+#           const express = require('express');
+#           const moment = require('moment');
+
+#           const app = express();
+#           const port = 3000;
+
+#           app.get('/', (req, res) => {
+#               const date = moment().format('LL');
+#               res.send('Hello Node.js<br>' + date);
+#           });
+
+#           const server = app.listen(port, '0.0.0.0', () => {
+#               console.log('The Server is running on port ' + port);
+#           });
+
+#           // Shut down the server after 30 seconds
+#           setTimeout(() => {
+#               console.log('Shutting down the server after 30 seconds...');
+#               server.close(() => {
+#                   console.log('Server shut down gracefully.');
+#                   process.exit(0); // Exit the process
+#               });
+#           }, 30000); // 30 seconds
+#           "
+# # Job 2: Build Docker Image and Push to ECR
+#   build-and-push:
+#     needs: build-and-test  # Only runs if tests pass
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       # Step 1: Checkout code
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       # Step 2: Set up Docker Buildx
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v2
+
+#       # Step 3: Configure AWS Credentials (authentication step)
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v2
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ secrets.AWS_REGION }}
+
+#       # Step 4: Log in to Amazon ECR
+#       - name: Log in to Amazon ECR
+#         id: ecr-login
+#         uses: aws-actions/amazon-ecr-login@v1
+
+#       # Step 5: Check if the ECR repository exists, and create it if it doesn't
+#       - name: Create ECR repository if it doesn't exist
+#         run: |
+#           if ! aws ecr describe-repositories --repository-names my-backend-app --region ${{ secrets.AWS_REGION }} > /dev/null 2>&1; then
+#             echo "ECR repository does not exist. Creating it..."
+#             aws ecr create-repository --repository-name my-backend-app --region ${{ secrets.AWS_REGION }}
+#           else
+#             echo "ECR repository already exists. Skipping creation."
+#           fi
+
+#       # Step 6: Generate a timestamp for tagging the Docker image
+#       - name: Generate image tag
+#         id: image_tag
+#         run: echo "::set-output name=tag::$(date +'%Y%m%d%H%M%S')"
+
+#       # Step 7: Build and tag the Docker image using the Dockerfile
+#       - name: Build Docker image
+#         run: |
+#           docker build -t my-backend-app:${{ steps.image_tag.outputs.tag }} -f ./backend/Dockerfile .
+
+#       # Step 8: Tag Docker image for ECR
+#       - name: Tag Docker image for ECR
+#         run: |
+#           docker tag my-backend-app:${{ steps.image_tag.outputs.tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
+
+#       # Step 9: Push Docker image to ECR
+#       - name: Push Docker image to ECR
+#         run: |
+#           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
+#   # Job 3: Deploy the Docker Container in AWS ECS
+#   deploy-to-ecs:
+#     needs: build-and-push
+#     runs-on: ubuntu-latest
+#     steps:
+#       # Step 1: Checkout the repository
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+#       # Step 2: Set up AWS CLI
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v2
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ secrets.AWS_REGION }}
+#       # Step 3: Update ECS service with new image
+#       - name: Deploy to ECS
+#         run: |
+#           ECS_CLUSTER=ecs-cluster
+#           ECS_SERVICE=ecs-service
+#           IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
+          
+#           # Get the existing task definition
+#           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-task-definition --query "taskDefinition" --output json)
+          
+#           # Update the image in the task definition
+#           NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '.containerDefinitions[0].image=$IMAGE_URI | { family: .family, containerDefinitions: .containerDefinitions }')
+          
+#           # Register the new task definition
+#           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
+#           # Update ECS service with the new task definition
+#           aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
+
 name: Backend Check
 
 on:
@@ -29,8 +181,7 @@ jobs:
 
       # Step 3: Install dependencies
       - name: Install dependencies
-        run: |
-          npm install moment nodemon express
+        run: npm install moment nodemon express
 
       # Step 4: Run tests (Modify this according to your testing framework)
       - name: Run tests
@@ -61,7 +212,8 @@ jobs:
               });
           }, 30000); // 30 seconds
           "
-# Job 2: Build Docker Image and Push to ECR
+
+  # Job 2: Build Docker Image and Push to ECR
   build-and-push:
     needs: build-and-test  # Only runs if tests pass
     runs-on: ubuntu-latest
@@ -101,44 +253,48 @@ jobs:
       # Step 6: Generate a timestamp for tagging the Docker image
       - name: Generate image tag
         id: image_tag
-        run: echo "::set-output name=tag::$(date +'%Y%m%d%H%M%S')"
+        run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
 
       # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
         run: |
-          docker build -t my-backend-app:${{ steps.image_tag.outputs.tag }} -f ./backend/Dockerfile .
+          docker build -t my-backend-app:${{ env.tag }} -f ./backend/Dockerfile .
 
       # Step 8: Tag Docker image for ECR
       - name: Tag Docker image for ECR
         run: |
-          docker tag my-backend-app:${{ steps.image_tag.outputs.tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
+          docker tag my-backend-app:${{ env.tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
 
       # Step 9: Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
+
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
     needs: build-and-push
     runs-on: ubuntu-latest
+
     steps:
       # Step 1: Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
-      # Step 2: Set up AWS CLI
+
+      # Step 2: Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
       # Step 3: Update ECS service with new image
       - name: Deploy to ECS
         run: |
-          ECS_CLUSTER=my-github-ecs-cluster
-          ECS_SERVICE=my-ecs-service
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
-          
+          ECS_CLUSTER=ecs-cluster
+          ECS_SERVICE=ecs-service
+          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
+
           # Get the existing task definition
           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-task-definition --query "taskDefinition" --output json)
           
@@ -147,5 +303,6 @@ jobs:
           
           # Register the new task definition
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
+
           # Update ECS service with the new task definition
           aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
