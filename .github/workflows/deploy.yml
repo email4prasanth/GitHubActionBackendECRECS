@@ -186,34 +186,73 @@ jobs:
         run: |
           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ecr-task-def:2 --query "taskDefinition" --output json)
       # Step 5: Update the image in the task definition and ensure proper memory allocation
+      # - name: Update the image in the task definition and memory allocation
+      #   run: |
+      #     NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '
+      #     .containerDefinitions[0].image=$IMAGE_URI | 
+      #     { 
+      #       family: .family, 
+      #       executionRoleArn: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ECSTaskExecutionRole",  # Update with your ARN
+      #       containerDefinitions: [{
+      #         name: .containerDefinitions[0].name,
+      #         image: $IMAGE_URI,
+      #         cpu: .containerDefinitions[0].cpu,
+      #         memory: 3072,  # Keep the container memory as required
+      #         memoryReservation: 1024,  # Optional: Set a memory reservation
+      #         essential: true,
+      #         portMappings: [{            # Include port mappings
+      #           containerPort: 3000,
+      #           hostPort: 3000,
+      #           protocol: "tcp"
+      #         }]
+      #       }],
+      #       requiresCompatibilities: ["FARGATE"], 
+      #       networkMode: "awsvpc", 
+      #       cpu: "1024", 
+      #       memory: "4096"  # Set task memory to at least 4096
+      #     }')
+
+      #     # Register the new task definition
+      #     NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
+
+      #     # Update ECS service with the new task definition
+      #     aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
+
+       # Step 5: Update the image in the task definition and ensure proper memory allocation
       - name: Update the image in the task definition and memory allocation
         run: |
           NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '
           .containerDefinitions[0].image=$IMAGE_URI | 
-          { 
+          {
             family: .family, 
-            executionRoleArn: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ECSTaskExecutionRole",  # Update with your ARN
+            executionRoleArn: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ECSTaskExecutionRole",
             containerDefinitions: [{
               name: .containerDefinitions[0].name,
               image: $IMAGE_URI,
               cpu: .containerDefinitions[0].cpu,
-              memory: 3072,  # Keep the container memory as required
-              memoryReservation: 1024,  # Optional: Set a memory reservation
+              memory: 3072,
+              memoryReservation: 1024,
               essential: true,
-              portMappings: [{            # Include port mappings
+              portMappings: [{
                 containerPort: 3000,
                 hostPort: 3000,
                 protocol: "tcp"
               }]
             }],
-            requiresCompatibilities: ["FARGATE"], 
-            networkMode: "awsvpc", 
-            cpu: "1024", 
-            memory: "4096"  # Set task memory to at least 4096
-          }')
+            requiresCompatibilities: ["FARGATE"],
+            networkMode: "awsvpc",
+            cpu: "1024",
+            memory: "4096"
+          }' | jq -c)  # Compress to a single-line JSON object
 
-          # Register the new task definition
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
+          echo "Registering new task definition..."
 
-          # Update ECS service with the new task definition
-          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
+          # Register the new task definition and capture the ARN
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json "$NEW_TASK_DEF" \
+            --query "taskDefinition.taskDefinitionArn" --output text)
+
+          # Update the ECS service with the new task definition ARN
+          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE \
+            --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
+     
