@@ -253,7 +253,9 @@ jobs:
       # Step 6: Generate a timestamp for tagging the Docker image
       - name: Generate image tag
         id: image_tag
-        run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+        run: echo "::set-output name=tag::$(date +'%Y%m%d%H%M%S')"
+        # id: image_tag
+        # run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
 
       # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
