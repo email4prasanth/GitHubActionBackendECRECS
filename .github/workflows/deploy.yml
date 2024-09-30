@@ -293,7 +293,7 @@ jobs:
       - name: Native Job
         id: deploy-to-ecs
         run: |
-          echo "I'm running on ${{needs.build-and-push.outputs.tag-number}}
+          echo "I'm running on ${{needs.build-and-push.outputs.tag-number}}"
 
       # # Step 1: Checkout the repository
       # - name: Checkout code
