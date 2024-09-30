@@ -273,8 +273,7 @@ jobs:
       # Step 8: Tag Docker image for ECR
       - name: Tag Docker image for ECR
         run: |
-          docker tag my-backend-app:${{ env.tag-number }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag-number  }}
-
+          docker tag my-backend-app:${{ env.tag-number }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag-number }}
       # Step 9: Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
