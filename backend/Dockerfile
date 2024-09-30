@@ -13,7 +13,7 @@ RUN npm install moment nodemon express
 # Step 5: Copy the rest of your application code to the container
 COPY . .
 
-# Step 6: Expose the port your app runs on (change if it needed)
+# Step 6: Expose the port your app runs on (change if needed)
 EXPOSE 3000
 
 # Step 7: Command to run the app (make sure the start script is in your package.json)

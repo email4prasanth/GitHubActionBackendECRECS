@@ -265,6 +265,7 @@ jobs:
       # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
         run: |
+          echo "Building Docker image with tag: ${{ env.tag }}"
           docker build -t my-backend-app:${{ steps.set_tag.outputs.tag }} -f ./backend/Dockerfile .
 
       # Step 8: Tag Docker image for ECR
