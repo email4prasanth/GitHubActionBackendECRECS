@@ -255,38 +255,39 @@ jobs:
       # Step 6: Generate a timestamp for tagging the Docker image
       - name: Generate image tag
         id: image_tag
-        run: echo "tag-number=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+        run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
       
-      # # Step 7: Set the tag as an output using environment files
-      # - name: Set output for tag
-      #   run: |
-      #     tag=$(date +'%Y%m%d%H%M%S')
-      #     echo "tag-number=$tag-number" >> $GITHUB_ENV
-      #     echo "tag-number=$tag-number" >> $GITHUB_OUTPUT
+      # Step 7: Set the tag as an output using environment files
+      - name: Set output for tag
+        run: |
+          tag=$(date +'%Y%m%d%H%M%S')
+          echo "tag=$tag" >> $GITHUB_ENV
+          echo "tag=$tag" >> $GITHUB_OUTPUT
 
       # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
         run: |
-          echo "Building Docker image with tag: ${{ env.tag-number }}"
-          docker build -t my-backend-app:${{ env.tag-number }} -f ./backend/Dockerfile .
+          echo "Building Docker image with tag: ${{ env.tag }}"
+          docker build -t my-backend-app:${{ env.tag }} -f ./backend/Dockerfile .
 
       # Step 8: Tag Docker image for ECR
       - name: Tag Docker image for ECR
         run: |
-          docker tag my-backend-app:${{ env.tag-number }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag-number }}
+          docker tag my-backend-app:${{ env.tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag  }}
+
       # Step 9: Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.ta-number  }}
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag  }}
     outputs:
-      tag: ${{ steps.image_tag.outputs.tag-number }}
+      tag-number: ${{ steps.image_tag.outputs.tag }}
 
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
     needs: build-and-push
     runs-on: ubuntu-latest
     env: 
-      tag-number: ${{ needs.build-and-push.outputs.tag }}
+      tag: ${{ needs.build-and-push.outputs.tag-number}}
     steps:
       # env variable
       - name: Native Job
