@@ -34,7 +34,15 @@ jobs:
 
       # Step 4: Run tests (Modify this according to your testing framework)
       - name: Run tests
-        run: node backend/index.js
+        run: | 
+          node backend/index.js
+          setTimeout(() => {
+              console.log('Shutting down the server after 30 seconds...');
+              server.close(() => {
+                  console.log('Server shut down gracefully.');
+                  process.exit(0); // Exit the process
+              });
+          }, 30000);
 
 # Job 2: Build Docker Image and Push to ECR
   build-and-push:
