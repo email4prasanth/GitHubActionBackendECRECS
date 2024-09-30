@@ -18,7 +18,7 @@ cd backend
 npm init (click enter for all)
 ```
 - This will create `package.json` file and 
-- `npm install moment nodemon` will create node_modules,package-lock.json file under backend.
+- `npm install moment nodemon express` will create node_modules,package-lock.json file under backend.
 - we need to create index.js since while builing package.json` we accepted "main":"index.js"
 - create a `.gitignore` file add `node_modules/, package-lock.json`.
 - If you run the script npm run start it will through an error, to resolve this open package.json under scripts add "start":"nodemon index.js" instead of test. 
@@ -60,11 +60,19 @@ npm init (click enter for all)
 - Create ECS service, cluster, task definition.
 -  Create ECS role as `github-ecs-role` with  `AWS service > Elastic Container Service > Elastic Container Service Task`, Attach Permissions `AmazonECSTaskExecutionRolePolicy, ECRFullAccess` open trust relationship make sure that "Service": "ecs-tasks.amazonaws.com" in json format.
 - Create Task definition `my-task-definition > aws fargate > OS > github-ecs-role > container my-ecs-container > copy my-backend-app uri, port map -80 > use log collectionn (if required)`.
-- Generate a task-definiton.json use vscode under path `H:\2_GitHub_Actions\GitHubActions\Gitbud_BE_ECR_ECS`.
+- Generate a **task-definiton.json** use vscode under path `H:\2_GitHub_Actions\GitHubActions\Gitbud_BE_ECR_ECS`.
 ```
 aws ecs describe-task-definition --task-definition my-task-definition --query taskDefinition > task-definition.json
 ```
+- Create cluster name `my-github-ecs-cluster` infra `AWS Fargate serverless` and create. 
 
-- Create cluster and service cluster name `my-github-ecs-cluster` infra `AWS Fargate serverless` and create. 
+
+
+- Go to ALB add tg and create 
+
+
+
+- Now select `Service > create, compute configuration select lauchtype, version latest. Deployment config > service > family **my-task-definition** and service name is my-ecs-service`,  desired task 1, deployment type Rollingupdate, min-100, max-200, Deployment failure detection use amazon ECS, **Service discovery**  uses Amazon Route 53 to create a namespace for your service, which allows it to be discoverable via DNS, selected vpc k8s and public subnet -1a 10.20.0.0/20,1b 10.20.16.0/20 allow all traffic, create
+- will see later select ALB, my-ecs-container80:80, and autoscaling.
 - Set env variable with ECS_SERVICE, ECS_CLUSTER, ECS_TASKDEFINITION
 

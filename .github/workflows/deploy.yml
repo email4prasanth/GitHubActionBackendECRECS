@@ -110,13 +110,16 @@ jobs:
       # Step 3: Update ECS service with new image
       - name: Deploy to ECS
         run: |
-          ECS_CLUSTER=my-ecs-cluster
+          ECS_CLUSTER=my-github-ecs-cluster
           ECS_SERVICE=my-ecs-service
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
+          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.image_tag.outputs.tag }}
+          
           # Get the existing task definition
           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-task-definition --query "taskDefinition" --output json)
+          
           # Update the image in the task definition
           NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '.containerDefinitions[0].image=$IMAGE_URI | { family: .family, containerDefinitions: .containerDefinitions }')
+          
           # Register the new task definition
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
           # Update ECS service with the new task definition
