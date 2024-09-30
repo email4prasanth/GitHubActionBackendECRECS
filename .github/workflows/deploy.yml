@@ -256,15 +256,13 @@ jobs:
       - name: Generate image tag
         id: image_tag
         run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
-      - name: tag name
-        run: echo "${{ steps.image_tag.outputs.tag }}"
       
-      # # Step 7: Set the tag as an output using environment files
-      # - name: Set output for tag
-      #   run: |
-      #     tag=$(date +'%Y%m%d%H%M%S')
-      #     echo "tag=$tag" >> $GITHUB_ENV
-      #     echo "tag=$tag" >> $GITHUB_OUTPUT
+      # Step 7: Set the tag as an output using environment files
+      - name: Set output for tag
+        run: |
+          tag=$(date +'%Y%m%d%H%M%S')
+          echo "tag=$tag" >> $GITHUB_ENV
+          echo "tag=$tag" >> $GITHUB_OUTPUT
 
       # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
@@ -287,18 +285,15 @@ jobs:
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
     needs: build-and-push
-
     runs-on: ubuntu-latest
+    env: 
+      tag: ${{ needs.build-and-push.outputs.tag }}
     steps:
-      - name: adding env to repo
-        uses: ./.github/workflows/deploy.yml
-        secrets:
-          TAG_NUMBER: ${{ needs.build-and-push.outputs.tag}}
       # env variable
       - name: Native Job
         id: deploy-to-ecs
         run: |
-          echo "I'm running on ${{needs.build-and-push.outputs.tag }}
+          echo "I'm running on ${{needs.build-and-push.outputs.tag}}
 
       # # Step 1: Checkout the repository
       # - name: Checkout code
