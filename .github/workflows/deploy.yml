@@ -254,7 +254,6 @@ jobs:
       - name: Generate image tag
         id: image_tag
         run: echo "tag=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
-             echo "$GITHUB_ENV"
 
       # Step 7: Build and tag the Docker image using the Dockerfile
       - name: Build Docker image
