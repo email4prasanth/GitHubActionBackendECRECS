@@ -279,73 +279,78 @@ jobs:
       - name: Push Docker image to ECR
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag  }}
+    outputs:
+      tag: ${{ steps.image_tag.outputs.tag }}
 
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
     needs: build-and-push
-    runs-on: ubuntu-latest
-    env:
-      tag: ${{ needs.build-and-push.outputs.tag }}
+    runs-on: [ubuntu-latest, steps.image_tag.outputs.tag]
 
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout code
-        uses: actions/checkout@v3
+      # env variable
+      - name: Native Job
+        id: native_job
+        run: echo "I'm running on ${{steps.image_tag.outputs.tag }}
 
-      # Step 2: Configure AWS credentials
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      # Step : Display the image tag
-      - name: Display the image tag
-        run: |
-          echo "Current image tag is: ${{ needs.build-and-push.outputs.tag }}"
-          echo "Current image tag is: ${{ env.tag }}"
+      # # Step 1: Checkout the repository
+      # - name: Checkout code
+      #   uses: actions/checkout@v3
 
-      # Step 3: Update ECS service with new image
-      - name: Deploy to ECS
-        run: |
-          ECS_CLUSTER=ecs-cluster
-          ECS_SERVICE=ecs-service
-          echo "GITHUB_ENV=$GITHUB_ENV"
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
-          echo "Update image is $IMAGE_URI"
-      # Step 4: Get the existing task definition
-      - name: Get the existing task definition
-        run: |
-          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ecr-task-def:2 --query "taskDefinition" --output json)
-      # Step 5: Update the image in the task definition and ensure proper memory allocation
-      - name: Update the image in the task definition and memory allocation
-        run: |
-          NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '
-          .containerDefinitions[0].image=$IMAGE_URI | 
-          { 
-            family: .family, 
-            executionRoleArn: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ECSTaskExecutionRole",  # Update with your ARN
-            containerDefinitions: [{
-              name: .containerDefinitions[0].name,
-              image: $IMAGE_URI,
-              cpu: .containerDefinitions[0].cpu,
-              memory: 3072,  # Keep the container memory as required
-              memoryReservation: 1024,  # Optional: Set a memory reservation
-              essential: true,
-              portMappings: [{            # Include port mappings
-                containerPort: 3000,
-                hostPort: 3000,
-                protocol: "tcp"
-              }]
-            }],
-            requiresCompatibilities: ["FARGATE"], 
-            networkMode: "awsvpc", 
-            cpu: "1024", 
-            memory: "4096"  # Set task memory to at least 4096
-          }')
+      # # Step 2: Configure AWS credentials
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v2
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ secrets.AWS_REGION }}
+      # # Step : Display the image tag
+      # - name: Display the image tag
+      #   run: |
+      #     echo "Current image tag is: ${{ needs.build-and-push.outputs.tag }}"
+      #     echo "Current image tag is: ${{ env.tag }}"
 
-          # Register the new task definition
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
+      # # Step 3: Update ECS service with new image
+      # - name: Deploy to ECS
+      #   run: |
+      #     ECS_CLUSTER=ecs-cluster
+      #     ECS_SERVICE=ecs-service
+      #     echo "GITHUB_ENV=$GITHUB_ENV"
+      #     IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag }}
+      #     echo "Update image is $IMAGE_URI"
+      # # Step 4: Get the existing task definition
+      # - name: Get the existing task definition
+      #   run: |
+      #     TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ecr-task-def:2 --query "taskDefinition" --output json)
+      # # Step 5: Update the image in the task definition and ensure proper memory allocation
+      # - name: Update the image in the task definition and memory allocation
+      #   run: |
+      #     NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '
+      #     .containerDefinitions[0].image=$IMAGE_URI | 
+      #     { 
+      #       family: .family, 
+      #       executionRoleArn: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ECSTaskExecutionRole",  # Update with your ARN
+      #       containerDefinitions: [{
+      #         name: .containerDefinitions[0].name,
+      #         image: $IMAGE_URI,
+      #         cpu: .containerDefinitions[0].cpu,
+      #         memory: 3072,  # Keep the container memory as required
+      #         memoryReservation: 1024,  # Optional: Set a memory reservation
+      #         essential: true,
+      #         portMappings: [{            # Include port mappings
+      #           containerPort: 3000,
+      #           hostPort: 3000,
+      #           protocol: "tcp"
+      #         }]
+      #       }],
+      #       requiresCompatibilities: ["FARGATE"], 
+      #       networkMode: "awsvpc", 
+      #       cpu: "1024", 
+      #       memory: "4096"  # Set task memory to at least 4096
+      #     }')
 
-          # Update ECS service with the new task definition
-          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
+      #     # Register the new task definition
+      #     NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
+
+      #     # Update ECS service with the new task definition
+      #     aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
