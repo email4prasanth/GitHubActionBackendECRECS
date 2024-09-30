@@ -299,8 +299,8 @@ jobs:
           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ecr-task-def:2 --query "taskDefinition" --output json)
           
           # Update the image in the task definition
-          NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '.containerDefinitions[0].image=$IMAGE_URI | { family: .family, containerDefinitions: .containerDefinitions }')
-          
+          NEW_TASK_DEF=$(echo "$TASK_DEFINITION" | jq --arg IMAGE_URI "$IMAGE_URI" '.containerDefinitions[0].image=$IMAGE_URI | { family: .family, containerDefinitions: .containerDefinitions, requiresCompatibilities: ["FARGATE"], networkMode: "awsvpc", cpu: "1024", memory: "2048" }')
+
           # Register the new task definition
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query "taskDefinition.taskDefinitionArn" --output text)
 
