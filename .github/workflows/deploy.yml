@@ -266,17 +266,17 @@ jobs:
       - name: Build Docker image
         run: |
           echo "Building Docker image with tag: ${{ env.tag }}"
-          docker build -t my-backend-app:${{ steps.set_tag.outputs.tag }} -f ./backend/Dockerfile .
+          docker build -t my-backend-app:${{ env.tag }} -f ./backend/Dockerfile .
 
       # Step 8: Tag Docker image for ECR
       - name: Tag Docker image for ECR
         run: |
-          docker tag my-backend-app:${{ steps.set_tag.outputs.tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.set_tag.outputs.tag  }}
+          docker tag my-backend-app:${{ env.tag }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag  }}
 
       # Step 9: Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ steps.set_tag.outputs.tag  }}
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag  }}
 
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
