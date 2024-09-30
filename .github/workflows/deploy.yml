@@ -279,11 +279,11 @@ jobs:
       - name: Push Docker image to ECR
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-backend-app:${{ env.tag  }}
-publish:
-  needs: [build-and-push]
-  runs-on: ubuntu-latest
-  env:
-    tag:needs.build-and-push.outputs.tag
+  publish:
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    env:
+      tag:needs.build-and-push.outputs.tag
 
   # Job 3: Deploy the Docker Container in AWS ECS
   deploy-to-ecs:
