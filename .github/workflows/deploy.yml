@@ -6,8 +6,8 @@ on:
   push:
     branches:
       - prasanth
-    paths:
-      - 'backend/**'
+    # paths:
+    #   - 'backend/**'
 
   pull_request:
     branches:
@@ -241,25 +241,24 @@ jobs:
             }],
             requiresCompatibilities: ["FARGATE"],
             networkMode: "awsvpc",
-            cpu: "1024",
+            cpu: "1024",  
             memory: "4096"
           }' )
            
 
-          echo "Registering new task definition..."
-      # Register the new task definition and capture the ARN
-      - name: Register the new task definition
-        run: |
-          # Debug the new task definition JSON
-          echo "New Task Definition JSON: $NEW_TASK_DEF"
-          echo "$NEW_TASK_DEF" | jq empty
-      - name: Register the new task definition
-        run: |
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
-            --cli-input-json "$NEW_TASK_DEF" \
-            --query "taskDefinition.taskDefinitionArn" --output text)
+      #     echo "Registering new task definition..."
+      # # Register the new task definition and capture the ARN
+      # - name: Register the new task definition
+      #   run: |
+      #     # Debug the new task definition JSON
+      #     echo "New Task Definition JSON: $NEW_TASK_DEF"
+      #     echo "$NEW_TASK_DEF" | jq empty
+      # - name: Register the new task definition
+      #   run: |
+      #     NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+      #       --cli-input-json "$NEW_TASK_DEF" \
+      #       --query "taskDefinition.taskDefinitionArn" --output text)
 
-          # Update the ECS service with the new task definition ARN
-          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE \
-            --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
-     
+      #     # Update the ECS service with the new task definition ARN
+      #     aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE \
+      #       --task-definition "$NEW_TASK_DEF_ARN" --force-new-deployment
